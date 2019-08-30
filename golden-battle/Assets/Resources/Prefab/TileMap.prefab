@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 390246f96fb855244a8c9bd900570ff4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size_x: 10
+  size_x: 9
   size_z: 10
   tileSize: 1
   selectedUnit: {fileID: 0}

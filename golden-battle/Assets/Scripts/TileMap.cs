@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-[ExecuteInEditMode]
+
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(MeshCollider))]
@@ -20,25 +20,30 @@ public class TileMap : MonoBehaviour{
     bool[,] isTileWalkable;
     List<GameObject> highLightPlanes = null;
 
+    public GameManager gameManager;
+
     // Start is called before the first frame update
     void Start()
     {
         BuildMesh();
         GeneratePathFindingGraph();
-        PopulateWalkable();
+        //PopulateWalkable();
+        Debug.Log("Tile Map Init Done");
     }
 
-    private void PopulateWalkable() {
+    public void PopulateWalkable(Unit[,] unitsMap) {
         isTileWalkable = new bool[size_x, size_z];
 
-        for (int i = 0; i < size_z; i++) {
-            for (int j = 0; j < size_x; j++) {
-                isTileWalkable[i, j] = true;
+        for (int z = 0; z < size_z; z++) {
+            for (int x = 0; x < size_x; x++) {
+                isTileWalkable[x, z] = new bool();
+                if (unitsMap[x,z] != null) {
+                    isTileWalkable[x, z] = false;
+                } else {
+                    isTileWalkable[x, z] = true;
+                }
             }
         }
-
-        isTileWalkable[4, 4] = false;
-        isTileWalkable[5, 4] = false;
     }
 
     private void GeneratePathFindingGraph() {
@@ -52,24 +57,28 @@ public class TileMap : MonoBehaviour{
 
         for (int i = 0; i < size_z; i++) {
             for (int j = 0; j < size_x; j++) {
-                pathingGraph[j, i] = new Node();
-                pathingGraph[j, i].z = i;
-                pathingGraph[j, i].x = j;
+                pathingGraph[j, i] = new Node {
+                    z = i,
+                    x = j
+                };
             }
         }
 
-        for (int i = 0; i < size_z; i++) {
-            for (int j = 0; j < size_x; j++) {
+        for (int z = 0; z < size_z; z++) {
+            for (int x = 0; x < size_x; x++) {
                 for (int dir = 0; dir < 4; dir++) {
-                    if (i + directions[dir, 0] >= 0
-                        && i + directions[dir, 0] < size_z
-                        && j + directions[dir, 1] >= 0
-                        && j + directions[dir, 1] < size_x) {
-                        pathingGraph[i, j].adjacent.Add(pathingGraph[i + directions[dir, 0], j + directions[dir, 1]]);
+                    if (z + directions[dir, 1] >= 0
+                        && z + directions[dir, 1] < size_z
+                        && x + directions[dir, 0] >= 0
+                        && x + directions[dir, 0] < size_x) {
+                        pathingGraph[x, z].adjacent.Add(pathingGraph[x + directions[dir, 0], z + directions[dir, 1]]);
                     }
                 }
             }
         }
+
+        Debug.Log("Pathing graph done");
+        Debug.Log(pathingGraph[4, 1]);
     }
 
     public void BuildMesh() {
@@ -110,13 +119,14 @@ public class TileMap : MonoBehaviour{
 
             }
         }
-            
+
         //New Mesh and populate
-        Mesh mesh = new Mesh();
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.normals = normals;
-        mesh.uv = uv;
+        Mesh mesh = new Mesh {
+            vertices = vertices,
+            triangles = triangles,
+            normals = normals,
+            uv = uv
+        };
 
         //Assign to stuff
 
@@ -130,16 +140,20 @@ public class TileMap : MonoBehaviour{
         //BuildTexture();
     }
 
-    public void GeneratePathTo(int x, int z) {
+    public void GeneratePathTo(int x, int z, bool isAtk) {
+
+        Unit currUnit = selectedUnit.GetComponent<Unit>();
+
+        if ((!isAtk && !currUnit.canMove) || (isAtk & !currUnit.canAtk)) return;
         
-        selectedUnit.GetComponent<Unit>().currentPath = null;
+        currUnit.currentPath = null;
         Dictionary<Node, float> dist = new Dictionary<Node, float>();
         Dictionary<Node, Node> prev = new Dictionary<Node, Node>();
 
         //This is a Dijkstra implementaion;
         Node source = pathingGraph[
-            selectedUnit.GetComponent<Unit>().tileX,
-            selectedUnit.GetComponent<Unit>().tileZ
+            currUnit.tileX,
+            currUnit.tileZ
             ];
 
         Node target = pathingGraph[
@@ -181,7 +195,7 @@ public class TileMap : MonoBehaviour{
 
             foreach (Node v in u.adjacent) {
                 //float alt = dist[u] + u.DistanceTo(v);\
-                if (isTileWalkable[v.x, v.z]) {
+                if (isTileWalkable[v.x, v.z] || isAtk) {
                     float alt = dist[u] + 1;
                     if (alt < dist[v]) {
                         dist[v] = alt;
@@ -191,41 +205,64 @@ public class TileMap : MonoBehaviour{
             }
         }
 
-        if (prev[target] == null || (dist[target] < selectedUnit.GetComponent<Unit>().minMoveRange || dist[target] > selectedUnit.GetComponent<Unit>().maxMoveRange)) {
-            return;
-        }
-        else {
-            List<Node> currentPath = new List<Node>();
-            Node curr = target;
-
-            while (curr != null) {
-                currentPath.Add(curr);
-                curr = prev[curr];
+        if (!isAtk) {
+            if (prev[target] == null || (dist[target] < currUnit.minMoveRange || dist[target] > currUnit.maxMoveRange)) {
+                return;
             }
+            else {
+                List<Node> currentPath = new List<Node>();
+                Node curr = target;
 
-            currentPath.Reverse();
+                while (curr != null) {
+                    currentPath.Add(curr);
+                    curr = prev[curr];
+                }
 
-            selectedUnit.GetComponent<Unit>().currentPath = currentPath;
-            clearHighLight();
+                currentPath.Reverse();
 
-            isTileWalkable[source.x, source.z] = true;
-            isTileWalkable[x, z] = false;
-       
+                currUnit.currentPath = currentPath;
+                ClearHighLight();
+
+
+                isTileWalkable[source.x, source.z] = true;
+                isTileWalkable[x, z] = false;
+
+                gameManager.unitsMap[x, z] = gameManager.unitsMap[source.x, source.z];
+                gameManager.unitsMap[source.x, source.z] = null;
+
+                currUnit.canMove = false;
+                if (!currUnit.canAtk && !currUnit.canMove) {
+                    gameManager.NotifyUnitDone();
+                }
+            }
+        } else {
+            if (prev[target] == null || (dist[target] < currUnit.minAtkRange || dist[target] > currUnit.maxAtkRange)) {
+                return;
+            }
+            DoAttack(currUnit, gameManager.unitsMap[x, z]);
         }
+        
     }
-    // Update is called once per frame
+
+    private void DoAttack(Unit Attacker, Unit Target) {
+        float dmg_multiplier = 1.0f - ((0.052f * Target.armor) / (0.9f + 0.048f * Math.Abs(Target.armor)));
+        int dmg = (int)Math.Floor(Attacker.damage*1.0f * dmg_multiplier);
+        Debug.Log(dmg);
+        Attacker.canAtk = false;
+        gameManager.currAction = 0;
+    }
 
     public Vector3 TileCoordToWorldCoord(int x, int z) {
         return new Vector3(x+0.5f, 0.2f, z+0.5f);
     }
 
-    public void HighlightRangeAroundUnit(int minRange, int maxRange) {
+    public void HighlightRangeAroundUnit(int minRange, int maxRange, string Color, bool isAtk) {
         Queue<Node> nextNodes = new Queue<Node>();
         Queue<int> levels = new Queue<int>();
         List<Node> tobeHighLighted = new List<Node>();
         bool[,] visited = new bool[size_x, size_z];
 
-        clearHighLight();
+        ClearHighLight();
 
         for (int z = 0; z < size_z; z++) {
             for (int x = 0; x < size_x; x++) {
@@ -233,13 +270,16 @@ public class TileMap : MonoBehaviour{
             }
         }
 
+        //Debug.Log(selectedUnit.GetComponent<Unit>().tileX + " " + selectedUnit.GetComponent<Unit>().tileZ);
+        Debug.Log(pathingGraph[0, 0]);
+
         nextNodes.Enqueue(pathingGraph[selectedUnit.GetComponent<Unit>().tileX, selectedUnit.GetComponent<Unit>().tileZ]);
         levels.Enqueue(0);
 
         while (nextNodes.Count != 0) {
             Node currNode = nextNodes.Dequeue();
             int currLevel = levels.Dequeue();
-            if (currLevel > maxRange || visited[currNode.x, currNode.z]) continue;
+            if (visited[currNode.x, currNode.z]) continue;
             visited[currNode.x, currNode.z] = true;
             if (currLevel >= minRange
                 && currLevel <= maxRange) {
@@ -247,14 +287,20 @@ public class TileMap : MonoBehaviour{
             }
 
             foreach (Node v in currNode.adjacent) { 
-                if (isTileWalkable[v.x, v.z] && !visited[v.x,v.z]) {
+                if ((isTileWalkable[v.x, v.z] || isAtk) && !visited[v.x,v.z] && currLevel + 1 <= maxRange) {
                     nextNodes.Enqueue(v);
                     levels.Enqueue(currLevel + 1);
                     
                 }
             }
         }
-        GameObject hlPrefab = Resources.Load<GameObject>("Prefab/PinkHightLight");
+        GameObject hlPrefab;
+        if (Color.Equals("Pink")) {
+             hlPrefab = Resources.Load<GameObject>("Prefab/PinkHightLight");
+        } else {
+             hlPrefab = Resources.Load<GameObject>("Prefab/PurpleHighLight");
+        }
+        
  
 
         foreach(Node v in tobeHighLighted) {
@@ -263,7 +309,9 @@ public class TileMap : MonoBehaviour{
         }
     }
 
-    private void clearHighLight() {
+
+
+    private void ClearHighLight() {
         if (highLightPlanes != null) {
             foreach (GameObject go in highLightPlanes) {
                 Destroy(go);

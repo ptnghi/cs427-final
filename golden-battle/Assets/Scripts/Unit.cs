@@ -9,19 +9,25 @@ public class Unit : MonoBehaviour
     public int tileZ;
 
     public TileMap map;
-
     public List<Node> currentPath = null;
-
     private Collider coll;
+    public GameManager gm;
 
     float tempTime;
-
     const float sendRate = 0.1f;
 
     public int minMoveRange = 2;
     public int maxMoveRange = 4;
-      
+    public int minAtkRange;
+    public int maxAtkRange;
 
+    public int health;
+    public int armor;
+    public int damage;
+    public int team;
+
+    public bool canMove = false;
+    public bool canAtk = false;
 
     void Start()
     {
@@ -33,11 +39,15 @@ public class Unit : MonoBehaviour
         RaycastHit hitInfo;
 
         if (coll.Raycast(ray, out hitInfo, 100.0f)) {
-            Debug.Log("Select Unit");
-            map.selectedUnit = gameObject;
-            map.HighlightRangeAroundUnit(minMoveRange, maxMoveRange);
+            if (gm.currTurn == team) {
+                Debug.Log("Select Unit");
+                gm.SelectUnit(gameObject);
+            }
+            else if (gm.currAction == 1) {
+                Debug.Log("Target Unit");
+                map.GeneratePathTo(tileX, tileZ, true);
+            }
         }
-
     }
 
     // Update is called once per frame

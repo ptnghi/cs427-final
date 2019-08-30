@@ -15,6 +15,9 @@ public class TileMapMouse : MonoBehaviour {
     }
 
     public void OnMouseUp() {
+        if (tileMap.gameManager.currAction != 0) {
+            return;
+        }
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hitInfo;
 
@@ -25,7 +28,7 @@ public class TileMapMouse : MonoBehaviour {
 
             Debug.Log("Tile:" + x + "," + z);
 
-            tileMap.GeneratePathTo(x, z);
+            tileMap.GeneratePathTo(x, z, false);
 
             currentTileCoord.x = x;
             currentTileCoord.z = z;
