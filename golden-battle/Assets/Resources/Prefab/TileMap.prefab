@@ -110,6 +110,9 @@ MonoBehaviour:
   size_z: 10
   tileSize: 1
   selectedUnit: {fileID: 0}
+  gameManager: {fileID: 0}
+  damagePopUp: {fileID: 6072084896467633936, guid: da6f8c2cfcd3fc9448da4041c9f28233,
+    type: 3}
 --- !u!114 &8109578422530245968
 MonoBehaviour:
   m_ObjectHideFlags: 0

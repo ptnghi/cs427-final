@@ -41,3 +41,6 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: DmgPop
+    uniqueID: 3144123287
+    locked: 0

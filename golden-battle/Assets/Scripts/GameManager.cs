@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour{
@@ -10,32 +11,36 @@ public class GameManager : MonoBehaviour{
     List<Unit>[] units;
     public Unit[,] unitsMap;
     Dictionary<string, string> unitPrefabPaths = new Dictionary<string, string>() {
-        {"Archer", "Prefab/Archer"},
-        {"General", "Prefab/General" },
-        { "Warrior", "Prefab/Warrior"}
+        {"Archer", "Prefab/ArcherModel"},
+        {"General", "Prefab/GeneralModel" },
+        { "Warrior", "Prefab/WarriorModel"}
     };
 
     public GameObject attackButton;
+    public GameObject nextTurnText;
+    public GameObject menuButtons;
        
     Unit selectedUnit;  
 
     public int currTurn;
     public int currAction; //0 = Move, 1 = attack
     int unitsDone;
+    public bool gameEnd;
 
     // Start is called before the first frame update
     void Start(){
+        gameEnd = false;
         CreateMap();
         CreateUnits();
         currTurn = 1;
         attackButton.SetActive(false);
-        NexTurn();
+        StartCoroutine(NexTurn());
     }
 
     public void NotifyUnitDone() {
         unitsDone++;
         if (unitsDone == units[currTurn].Count) {
-            NexTurn();
+            StartCoroutine(NexTurn());
         }
     }
 
@@ -44,16 +49,21 @@ public class GameManager : MonoBehaviour{
             unit.canMove = false;
             unit.canAtk = false;
         }
-        NexTurn();
+        StartCoroutine(NexTurn());
     }
 
-    private void NexTurn() {
+    private IEnumerator NexTurn() {
         unitsDone = 0;
         currTurn = (currTurn + 1) % 2;
+        string text = "Player's " + (currTurn + 1).ToString() + " turn!";
+        nextTurnText.GetComponent<Text>().text = text;
+        nextTurnText.SetActive(true);
         foreach(Unit unit in units[currTurn]) {
             unit.canMove = true;
             unit.canAtk = true;
         }
+        yield return new WaitForSeconds(2);
+        nextTurnText.SetActive(false);
     }
 
     internal void SelectUnit(GameObject gameObject) {
@@ -96,7 +106,7 @@ public class GameManager : MonoBehaviour{
        
 
         foreach(PieceInfo piece in team1Board) {
-            GameObject go = Instantiate(Resources.Load<GameObject>(unitPrefabPaths[piece.pieceName]), map.TileCoordToWorldCoord(piece.posX, piece.posZ), Quaternion.identity);
+            GameObject go = Instantiate(Resources.Load<GameObject>(unitPrefabPaths[piece.pieceName]), map.TileCoordToWorldCoord(piece.posX, piece.posZ) + new Vector3(0,-0.2f,0), Quaternion.identity);
             Unit unit = go.GetComponent<Unit>();
             unit.team = 0;
             unit.map = map;
@@ -108,7 +118,8 @@ public class GameManager : MonoBehaviour{
         }
 
         foreach (PieceInfo piece in team2Board) {
-            GameObject go = Instantiate(Resources.Load<GameObject>(unitPrefabPaths[piece.pieceName]), map.TileCoordToWorldCoord(piece.posX, piece.posZ), Quaternion.identity);
+            GameObject go = Instantiate(Resources.Load<GameObject>(unitPrefabPaths[piece.pieceName]), map.TileCoordToWorldCoord(piece.posX, piece.posZ) + new Vector3(0, -0.2f, 0), Quaternion.identity);
+            go.transform.Rotate(0, 180, 0);
             Unit unit = go.GetComponent<Unit>();
             unit.team = 1;
             unit.map = map;
@@ -130,12 +141,41 @@ public class GameManager : MonoBehaviour{
     }
 
     public void AttackMode() {
+        Debug.Log("Attack CLick");
         currAction = 1;
         map.HighlightRangeAroundUnit(selectedUnit.minAtkRange, selectedUnit.maxAtkRange, "Pink", true);
+        
     }
 
-    // Update is called once per frame
-    void Update(){
-        
+    public void KillUnit( Unit victim) {
+        int dyingTeam = victim.team;
+        unitsMap[victim.tileX, victim.tileZ] = null;
+        units[dyingTeam].Remove(victim);
+        map.FreeWalkable(victim.tileX, victim.tileZ);
+        Destroy(victim.gameObject);
+
+        if (units[dyingTeam].Count <= 0) {
+            GameEnd();
+        }
+    }
+
+    private void GameEnd() {
+        string text = "Player's " + (currTurn + 1).ToString() + " victory!";
+        nextTurnText.GetComponent<Text>().text = text;
+        nextTurnText.SetActive(true);
+        gameEnd = true;
+        menuButtons.SetActive(true);
+    }
+
+    public void HideAttackButton() {
+        attackButton.SetActive(false);
+    }
+
+    public void Replay() {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void Quit() {
+        SceneManager.LoadScene("MainMenu");
     }
 }

@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class Unit : MonoBehaviour
-{
+public class Unit : MonoBehaviour {
 
     public int tileX;
     public int tileZ;
@@ -12,6 +13,8 @@ public class Unit : MonoBehaviour
     public List<Node> currentPath = null;
     private Collider coll;
     public GameManager gm;
+    public event Action<int, int> OnHealthChange = delegate { };
+    public Animator animator;
 
     float tempTime;
     const float sendRate = 0.1f;
@@ -25,54 +28,73 @@ public class Unit : MonoBehaviour
     public int armor;
     public int damage;
     public int team;
+    public int currHealth;
 
     public bool canMove = false;
     public bool canAtk = false;
 
+
+    private Node currMoveTarget = null;
+    private float speed = 2.0f;
+
+
     void Start()
     {
-        coll = GetComponent<BoxCollider>();
+        coll = GetComponent<CapsuleCollider>();
+        currHealth = health;
+        GetComponentInChildren<HealthBar>().OnHealthUpdateDone += OnHealthUpdateDone;
+        animator = GetComponent<Animator>();
+        DoDamage(0);
     }
 
     public void OnMouseUp() {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hitInfo;
+        if (!EventSystem.current.IsPointerOverGameObject()) {
+            if (!gm.gameEnd) {
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hitInfo;
 
-        if (coll.Raycast(ray, out hitInfo, 100.0f)) {
-            if (gm.currTurn == team) {
-                Debug.Log("Select Unit");
-                gm.SelectUnit(gameObject);
-            }
-            else if (gm.currAction == 1) {
-                Debug.Log("Target Unit");
-                map.GeneratePathTo(tileX, tileZ, true);
+                if (coll.Raycast(ray, out hitInfo, 100.0f)) {
+                    if (gm.currTurn == team) {
+                        Debug.Log("Select Unit");
+                        gm.currAction = 0;
+                        gm.SelectUnit(gameObject);
+                    }
+                    else if (gm.currAction == 1) {
+                        Debug.Log("Target Unit");
+                        gm.HideAttackButton();
+                        map.GeneratePathTo(tileX, tileZ, true);
+                    }
+                }
             }
         }
     }
 
     // Update is called once per frame
     void Update(){
-        if (currentPath != null) {
-            int currNode = 0;
+        if (currMoveTarget != null) {
+            float step = speed * Time.deltaTime;
+            Vector3 target = map.TileCoordToWorldCoord(currMoveTarget.x, currMoveTarget.z) + new Vector3(0, -0.2f, 0);
+            transform.position = Vector3.MoveTowards(transform.position, target , step);
+            transform.LookAt(target);
 
-            while (currNode < currentPath.Count - 1) {
-                Vector3 start = map.TileCoordToWorldCoord(currentPath[currNode].x, currentPath[currNode].z)
-                    + new Vector3(0, 0.2f, 0);
-                Vector3 end = map.TileCoordToWorldCoord(currentPath[currNode + 1].x, currentPath[currNode + 1].z)
-                    + new Vector3(0, 0.2f, 0); ;
+            if (Vector3.Distance(transform.position, map.TileCoordToWorldCoord(currMoveTarget.x, currMoveTarget.z) + new Vector3(0, -0.2f, 0)) < 0.001f) {
+                currMoveTarget = null;
+                if (currentPath != null) {
+                    currentPath.RemoveAt(0);
 
+                    tileX = currentPath[0].x;
+                    tileZ = currentPath[0].z;
 
-                Debug.DrawLine(start, end, Color.red);
+                    currMoveTarget = currentPath[0];
 
-                currNode++;
+                    if (currentPath.Count == 1) {
+                        currentPath = null;
+                        //currMoveTarget = null;
+
+                    }
+                }
             }
         }
-        tempTime += Time.deltaTime;
-        if (tempTime > sendRate) {
-            tempTime -= sendRate;
-            MoveFollowPath();
-        }
-
     }
 
     public void MoveFollowPath() {
@@ -89,5 +111,22 @@ public class Unit : MonoBehaviour
         if (currentPath.Count == 1) {
             currentPath = null;
         }
+    }
+
+    public void DoDamage(int amount) {
+        currHealth -= amount;
+        OnHealthChange(currHealth, health);
+    }
+
+    private void OnHealthUpdateDone() {
+        if (currHealth <= 0) {
+            gm.KillUnit(this);
+        }
+    }
+
+    public void SetPath(List<Node> inPath) {
+        currentPath = inPath;
+        canMove = false;
+        currMoveTarget = currentPath[0];
     }
 }

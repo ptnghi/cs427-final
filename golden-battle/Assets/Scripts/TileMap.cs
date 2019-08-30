@@ -22,6 +22,8 @@ public class TileMap : MonoBehaviour{
 
     public GameManager gameManager;
 
+   
+
     // Start is called before the first frame update
     void Start()
     {
@@ -220,7 +222,7 @@ public class TileMap : MonoBehaviour{
 
                 currentPath.Reverse();
 
-                currUnit.currentPath = currentPath;
+                currUnit.SetPath(currentPath);
                 ClearHighLight();
 
 
@@ -230,7 +232,7 @@ public class TileMap : MonoBehaviour{
                 gameManager.unitsMap[x, z] = gameManager.unitsMap[source.x, source.z];
                 gameManager.unitsMap[source.x, source.z] = null;
 
-                currUnit.canMove = false;
+                
                 if (!currUnit.canAtk && !currUnit.canMove) {
                     gameManager.NotifyUnitDone();
                 }
@@ -239,16 +241,28 @@ public class TileMap : MonoBehaviour{
             if (prev[target] == null || (dist[target] < currUnit.minAtkRange || dist[target] > currUnit.maxAtkRange)) {
                 return;
             }
-            DoAttack(currUnit, gameManager.unitsMap[x, z]);
+            ClearHighLight();
+            if (!currUnit.canAtk && !currUnit.canMove) {
+                gameManager.NotifyUnitDone();
+            }
+            StartCoroutine(DoAttack(currUnit, gameManager.unitsMap[x, z]));
+            
         }
         
     }
 
-    private void DoAttack(Unit Attacker, Unit Target) {
+    private IEnumerator DoAttack(Unit Attacker, Unit Target) {
         float dmg_multiplier = 1.0f - ((0.052f * Target.armor) / (0.9f + 0.048f * Math.Abs(Target.armor)));
         int dmg = (int)Math.Floor(Attacker.damage*1.0f * dmg_multiplier);
         Debug.Log(dmg);
         Attacker.canAtk = false;
+        Attacker.gameObject.transform.LookAt(Target.gameObject.transform);
+        Target.gameObject.transform.LookAt(Attacker.gameObject.transform);
+        Attacker.animator.SetTrigger("AttackTrigger");
+        yield return new WaitForSeconds(1);
+        DamagePopUp.Create(TileCoordToWorldCoord(Target.tileX, Target.tileZ) + new Vector3(0,2.1f,0), dmg);
+        Target.animator.SetTrigger("HitTrigger");
+        Target.DoDamage(dmg);
         gameManager.currAction = 0;
     }
 
@@ -321,6 +335,10 @@ public class TileMap : MonoBehaviour{
         else {
             highLightPlanes = new List<GameObject>();
         }
+    }
+
+    public void FreeWalkable (int x, int z) {
+        isTileWalkable[x, z] = true;
     }
 
     void Update(){
