@@ -385,6 +385,7 @@ MonoBehaviour:
   currHealth: 0
   canMove: 0
   canAtk: 0
+  attackSound: {fileID: 8300000, guid: ff661f75b0be9f84082cea0e172cc169, type: 3}
 --- !u!1001 &4152005161729745774
 PrefabInstance:
   m_ObjectHideFlags: 0

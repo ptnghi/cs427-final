@@ -375,7 +375,7 @@ MonoBehaviour:
   gm: {fileID: 0}
   animator: {fileID: 0}
   minMoveRange: 1
-  maxMoveRange: 2
+  maxMoveRange: 10
   minAtkRange: 1
   maxAtkRange: 1
   health: 600
@@ -385,6 +385,7 @@ MonoBehaviour:
   currHealth: 0
   canMove: 0
   canAtk: 0
+  attackSound: {fileID: 8300000, guid: a93d956f041bb25498f634546c2be67d, type: 3}
 --- !u!1001 &3270991152087794770
 PrefabInstance:
   m_ObjectHideFlags: 0

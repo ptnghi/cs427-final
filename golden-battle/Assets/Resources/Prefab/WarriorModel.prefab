@@ -116,6 +116,7 @@ MonoBehaviour:
   currHealth: 0
   canMove: 0
   canAtk: 0
+  attackSound: {fileID: 8300000, guid: a93d956f041bb25498f634546c2be67d, type: 3}
 --- !u!1 &2127510751770815994
 GameObject:
   m_ObjectHideFlags: 0
@@ -397,11 +398,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: WarriorModel
       objectReference: {fileID: 0}
-    - target: {fileID: -6057140222963153312, guid: 9fb7fa7742a007a4ba59f280f03576b2,
-        type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: ff44df5644b488f42a778e8122fc2a20, type: 2}
     - target: {fileID: -4216859302048453862, guid: 9fb7fa7742a007a4ba59f280f03576b2,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -457,6 +453,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -6057140222963153312, guid: 9fb7fa7742a007a4ba59f280f03576b2,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: ff44df5644b488f42a778e8122fc2a20, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9fb7fa7742a007a4ba59f280f03576b2, type: 3}
 --- !u!1 &1391587447674260483 stripped

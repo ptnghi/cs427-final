@@ -238,9 +238,6 @@ public class TileMap : MonoBehaviour{
                 }
             }
         } else {
-            if (prev[target] == null || (dist[target] < currUnit.minAtkRange || dist[target] > currUnit.maxAtkRange)) {
-                return;
-            }
             ClearHighLight();
             if (!currUnit.canAtk && !currUnit.canMove) {
                 gameManager.NotifyUnitDone();
@@ -260,10 +257,14 @@ public class TileMap : MonoBehaviour{
         Target.gameObject.transform.LookAt(Attacker.gameObject.transform);
         Attacker.animator.SetTrigger("AttackTrigger");
         yield return new WaitForSeconds(1);
+        gameManager.PlayAttackSound(Attacker.attackSound);
         DamagePopUp.Create(TileCoordToWorldCoord(Target.tileX, Target.tileZ) + new Vector3(0,2.1f,0), dmg);
         Target.animator.SetTrigger("HitTrigger");
         Target.DoDamage(dmg);
         gameManager.currAction = 0;
+        if (!Attacker.canAtk && !Attacker.canMove) {
+            gameManager.NotifyUnitDone();
+        }
     }
 
     public Vector3 TileCoordToWorldCoord(int x, int z) {

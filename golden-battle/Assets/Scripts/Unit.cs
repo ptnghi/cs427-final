@@ -37,6 +37,8 @@ public class Unit : MonoBehaviour {
     private Node currMoveTarget = null;
     private float speed = 2.0f;
 
+    public AudioClip attackSound;
+
 
     void Start()
     {

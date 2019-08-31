@@ -27,6 +27,13 @@ public class GameManager : MonoBehaviour{
     int unitsDone;
     public bool gameEnd;
 
+    private AudioSource audioPlayer;
+    
+    public void PlayAttackSound(AudioClip clip) {
+        audioPlayer.PlayOneShot(clip);
+    }
+
+
     // Start is called before the first frame update
     void Start(){
         gameEnd = false;
@@ -35,6 +42,7 @@ public class GameManager : MonoBehaviour{
         currTurn = 1;
         attackButton.SetActive(false);
         StartCoroutine(NexTurn());
+        audioPlayer = GetComponent<AudioSource>();
     }
 
     public void NotifyUnitDone() {
