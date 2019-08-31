@@ -16,7 +16,7 @@ public class TileMapMouse : MonoBehaviour {
     }
 
     public void OnMouseUp() {
-        if (!EventSystem.current.IsPointerOverGameObject()) {
+        if (!EventSystem.current.IsPointerOverGameObject() && !tileMap.gameManager.isPaused) {
             if (tileMap.gameManager.currAction != 0 || tileMap.gameManager.gameEnd) {
                 return;
             }

@@ -375,7 +375,7 @@ MonoBehaviour:
   gm: {fileID: 0}
   animator: {fileID: 0}
   minMoveRange: 1
-  maxMoveRange: 10
+  maxMoveRange: 3
   minAtkRange: 1
   maxAtkRange: 1
   health: 600

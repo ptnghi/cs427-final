@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour{
     public GameObject attackButton;
     public GameObject nextTurnText;
     public GameObject menuButtons;
+    public GameObject pauseMenu;
        
     Unit selectedUnit;  
 
@@ -28,6 +29,8 @@ public class GameManager : MonoBehaviour{
     public bool gameEnd;
 
     private AudioSource audioPlayer;
+
+    public bool isPaused;
     
     public void PlayAttackSound(AudioClip clip) {
         audioPlayer.PlayOneShot(clip);
@@ -185,5 +188,27 @@ public class GameManager : MonoBehaviour{
 
     public void Quit() {
         SceneManager.LoadScene("MainMenu");
+    }
+
+    public void Update() {
+        if (Input.GetKeyDown(KeyCode.Escape)) {
+            if (isPaused) {
+                Resume();
+            } else {
+                Pause();
+            }
+        }
+    }
+
+    public void Resume() {
+        isPaused = false;
+        pauseMenu.SetActive(false);
+        Time.timeScale = 1f;
+    }
+
+    public void Pause() {
+        isPaused = true;
+        pauseMenu.SetActive(true);
+        Time.timeScale = 0f;
     }
 }

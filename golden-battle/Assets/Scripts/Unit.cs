@@ -50,7 +50,7 @@ public class Unit : MonoBehaviour {
     }
 
     public void OnMouseUp() {
-        if (!EventSystem.current.IsPointerOverGameObject()) {
+        if (!EventSystem.current.IsPointerOverGameObject() && !gm.isPaused) {
             if (!gm.gameEnd) {
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hitInfo;

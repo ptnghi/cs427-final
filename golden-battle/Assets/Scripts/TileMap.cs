@@ -238,6 +238,9 @@ public class TileMap : MonoBehaviour{
                 }
             }
         } else {
+            if (prev[target] == null || (dist[target] < currUnit.minAtkRange || dist[target] > currUnit.maxAtkRange)) {
+                return;
+            }
             ClearHighLight();
             if (!currUnit.canAtk && !currUnit.canMove) {
                 gameManager.NotifyUnitDone();
