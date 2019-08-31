@@ -1,5 +1,8 @@
 # GOLDEN BATTLE
 
+## Author
+
+Pham Thai Nghi - 1651024
 
 ## Release Download
 
